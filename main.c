@@ -11,53 +11,58 @@ Este jogo foi desenvolvido para aprovacao na disciplina de Sistemas Operacionais
 */
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #define MAX_TENTATIVAS 6
+#define MAX_JOGADORES 2
 
+char palavra_secreta[50];
+char palavra_codificada[50];
+int tam_palavra;
+char letra;
+int tentativas = 0;
+int acertos = 0;
+char desenho_forca[MAX_TENTATIVAS][8] = {" O\n", "/|\\\n", "/ \\\n", "", "", ""};
 
+sem_t sem_exclusao_mutua;
+sem_t sem_sincronizacao;
 
-
-
-int main() {
-    char* palavras[] = {"banana", "morango", "abacaxi", "uva", "laranja", "limao"};
-    int n_palavras = 6;
-    char palavra_secreta[50];
-    char palavra_codificada[50];
-    int tam_palavra;
-    char letra;
-    int tentativas = 0;
-    int acertos = 0;
+void* jogar(void* arg) {
+    int jogador = *(int*) arg;
+    int acertou = 0;
     int i, j;
 
-    print("---------------------------\n");
-    print("--                       --\n");
-    print("--   JOGO DA FORCA       --\n");
-    print("--                       --\n");
-    print("---------------------------\n\n");
+    while (tentativas < MAX_TENTATIVAS && !acertou) {
+        sem_wait(&sem_sincronizacao);
 
-
-    // Escolhe uma palavra aleatória
-    srand(time(NULL));
-    int indice_palavra = rand() % n_palavras;
-    strcpy(palavra_secreta, palavras[indice_palavra]);
-    tam_palavra = strlen(palavra_secreta);
-
-    // Inicializa a palavra codificada
-    for (i = 0; i < tam_palavra; i++) {
-        palavra_codificada[i] = '_';
-    }
-    palavra_codificada[tam_palavra] = '\0';
-
-    // Jogo da forca
-    while (tentativas < MAX_TENTATIVAS && acertos < tam_palavra) {
+        printf("Jogador %d:\n", jogador);
         printf("Palavra: %s\n", palavra_codificada);
+        printf("Tentativas restantes: %d\n", MAX_TENTATIVAS - tentativas);
         printf("Digite uma letra: ");
         letra = getchar();
+        getchar(); // Limpa o buffer do teclado
 
         // Verifica se a letra está na palavra
-        int acertou
+        sem_wait(&sem_exclusao_mutua);
+        acertou = 0;
+        for (i = 0; i < tam_palavra; i++) {
+            if (palavra_secreta[i] == letra && palavra_codificada[i] == '_') {
+                palavra_codificada[i] = letra;
+                acertou = 1;
+                acertos++;
+            }
+        }
+        if (!acertou) {
+            printf("Letra %c não encontrada na palavra.\n", letra);
+            printf("%s", desenho_forca[tentativas]);
+            tentativas++;
+        }
+        sem_post(&sem_exclusao_mutua);
+
+        sem_post(&sem_sincronizacao);
+    }
+
