@@ -65,4 +65,4 @@ void* jogar(void* arg) {
 
         sem_post(&sem_sincronizacao);
     }
-
+}
