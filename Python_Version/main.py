@@ -6,14 +6,12 @@ import os
 
 
 MAX_TENTATIVAS = 6
-MAX_PALAVRA = 5
 
 palavra = ""
 dicaPalavra = ""
 tamanho = 0
 nomeVencedor = ''
 sem_leitura_palavra = threading.Semaphore(0)
-esperar_teclado_ser_liberado = threading.Semaphore(1)
 esperar_turno_validacao = threading.Semaphore(1)
 jogadores_ativos = 2
 
